@@ -3,7 +3,7 @@
   "name": "Page2Email",
   "version": "1.0.0",
   "description": "Capture the current page as a screenshot or PDF and email it instantly.",
-  "permissions": ["activeTab", "tabs", "scripting", "downloads", "storage"],
+  "permissions": ["activeTab", "tabs", "scripting", "downloads", "storage", "identity", "identity.email"],
   "action": {
     "default_popup": "src/popup.html",
     "default_title": "Page2Email – Capture & Email this page",
@@ -17,11 +17,10 @@
   "background": {
     "service_worker": "src/background.js"
   },
-  "content_scripts": [
+  "web_accessible_resources": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["src/content.js"],
-      "run_at": "document_idle"
+      "resources": ["lib/html2pdf.bundle.min.js"],
+      "matches": ["<all_urls>"]
     }
   ],
   "icons": {

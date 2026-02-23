@@ -15,61 +15,30 @@
 
     <!-- Capture format -->
     <section class="section" aria-labelledby="format-label">
-      <p class="section-label" id="format-label">Capture format</p>
-      <div class="radio-group" role="radiogroup" aria-labelledby="format-label">
-        <label class="radio-option">
-          <input type="radio" name="format" value="screenshot" id="fmt-screenshot" checked />
-          <span class="radio-icon">🖼️</span>
-          <span class="radio-text">
-            <strong>Screenshot</strong>
-            <small>PNG image of the visible page</small>
-          </span>
-        </label>
-        <label class="radio-option">
-          <input type="radio" name="format" value="pdf" id="fmt-pdf" />
-          <span class="radio-icon">📄</span>
-          <span class="radio-text">
-            <strong>PDF</strong>
-            <small>Opens print dialog (Save as PDF)</small>
-          </span>
-        </label>
-      </div>
+      <label class="field-label" id="format-label" for="format-select">Capture format <span class="help-icon" data-tooltip="Choose Screenshot to capture the visible area as a PNG image, or PDF to generate a full-page PDF document.">?</span></label>
+      <select id="format-select" class="input select-method">
+        <option value="screenshot" selected>🖼️  Screenshot (PNG)</option>
+        <option value="pdf">📄  PDF (full page)</option>
+      </select>
+      <label class="checkbox-option" id="save-screenshot-option">
+        <input type="checkbox" id="save-screenshot" />
+        <span>Save screenshot to disk</span>
+      </label>
     </section>
 
     <!-- Email method -->
     <section class="section" aria-labelledby="method-label">
-      <p class="section-label" id="method-label">Send via</p>
-      <div class="radio-group" role="radiogroup" aria-labelledby="method-label">
-        <label class="radio-option">
-          <input type="radio" name="method" value="mailto" id="method-mailto" checked />
-          <span class="radio-icon">📧</span>
-          <span class="radio-text">
-            <strong>Default email app</strong>
-            <small>Opens your mail client (mailto)</small>
-          </span>
-        </label>
-        <label class="radio-option">
-          <input type="radio" name="method" value="gmail" id="method-gmail" />
-          <span class="radio-icon">✉️</span>
-          <span class="radio-text">
-            <strong>Gmail</strong>
-            <small>Opens Gmail compose tab</small>
-          </span>
-        </label>
-        <label class="radio-option">
-          <input type="radio" name="method" value="outlook" id="method-outlook" />
-          <span class="radio-icon">📨</span>
-          <span class="radio-text">
-            <strong>Outlook</strong>
-            <small>Opens Outlook Web compose tab</small>
-          </span>
-        </label>
-      </div>
+      <label class="field-label" id="method-label" for="method-select">Send via <span class="help-icon" data-tooltip="Select how to send. Default email app opens your system mail client. Gmail and Outlook open a compose tab in your browser.">?</span></label>
+      <select id="method-select" class="input select-method">
+        <option value="mailto" selected>📧  Default email app</option>
+        <option value="gmail">✉️  Gmail</option>
+        <option value="outlook">📨  Outlook</option>
+      </select>
     </section>
 
     <!-- Recipients -->
     <section class="section">
-      <label class="field-label" for="recipients">To (comma-separated)</label>
+      <label class="field-label" for="recipients">To (comma-separated) <span class="help-icon" data-tooltip="Enter one or more email addresses separated by commas. Use the Me button to quickly fill in your saved address.">?</span></label>
       <div class="input-row">
         <input
           type="text"
@@ -85,13 +54,13 @@
 
     <!-- Subject -->
     <section class="section">
-      <label class="field-label" for="subject">Subject</label>
+      <label class="field-label" for="subject">Subject <span class="help-icon" data-tooltip="Auto-generated from the page title, hostname, and date. You can edit it before sending.">?</span></label>
       <input type="text" id="subject" class="input" placeholder="Auto-generated from page title" />
     </section>
 
     <!-- Notes -->
     <section class="section">
-      <label class="field-label" for="notes">Notes / body</label>
+      <label class="field-label" for="notes">Notes / body <span class="help-icon" data-tooltip="Optional text added to the email body. Use it for expense codes, ticket numbers, or any context you want to include.">?</span></label>
       <textarea
         id="notes"
         class="input textarea"
@@ -102,7 +71,7 @@
 
     <!-- Save "me" address -->
     <section class="section section-me" id="section-save-me" hidden>
-      <label class="field-label" for="my-email">My email address</label>
+      <label class="field-label" for="my-email">From email address <span class="help-icon" data-tooltip="Save your email address so you can quickly fill the From field by clicking the Me button.">?</span></label>
       <div class="input-row">
         <input type="email" id="my-email" class="input" placeholder="your@email.com" />
         <button type="button" id="btn-save-me" class="btn-secondary">Save</button>

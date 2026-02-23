@@ -5,11 +5,10 @@
  */
 
 /* ─── DOM references ─────────────────────────────────────────────── */
-const fmtScreenshot = document.getElementById('fmt-screenshot');
-const fmtPdf = document.getElementById('fmt-pdf');
-const methodMailto = document.getElementById('method-mailto');
-const methodGmail = document.getElementById('method-gmail');
-const methodOutlook = document.getElementById('method-outlook');
+const formatSelect = document.getElementById('format-select');
+const saveScreenshotCheckbox = document.getElementById('save-screenshot');
+const saveScreenshotOption = document.getElementById('save-screenshot-option');
+const methodSelect = document.getElementById('method-select');
 const recipientsInput = document.getElementById('recipients');
 const subjectInput = document.getElementById('subject');
 const notesInput = document.getElementById('notes');
@@ -32,6 +31,16 @@ async function init() {
 
   if (stored.myEmail) {
     myEmailInput.value = stored.myEmail;
+  } else {
+    // Try to prefill from the Chrome browser profile
+    try {
+      const userInfo = await chrome.identity.getProfileUserInfo({ accountStatus: 'ANY' });
+      if (userInfo.email) {
+        myEmailInput.value = userInfo.email;
+        // Persist it so it's available for "Send to me" immediately
+        await chrome.storage.sync.set({ myEmail: userInfo.email });
+      }
+    } catch { /* identity API unavailable – ignore */ }
   }
   if (stored.lastRecipients) {
     recipientsInput.value = stored.lastRecipients;
@@ -46,12 +55,13 @@ async function init() {
 
 /* ─── Update capture button label ───────────────────────────────── */
 function updateCaptureButton() {
-  const format = fmtPdf.checked ? 'pdf' : 'screenshot';
-  btnCaptureText.textContent = format === 'pdf' ? '📄 Print to PDF & Send' : '📸 Capture & Send';
+  const format = formatSelect.value;
+  btnCaptureText.textContent = format === 'pdf' ? '📄 Generate PDF & Send' : '📸 Capture & Send';
+  // Show the "save to disk" checkbox only for screenshot mode
+  saveScreenshotOption.hidden = format !== 'screenshot';
 }
 
-fmtScreenshot.addEventListener('change', updateCaptureButton);
-fmtPdf.addEventListener('change', updateCaptureButton);
+formatSelect.addEventListener('change', updateCaptureButton);
 
 /* ─── "Send to me" ───────────────────────────────────────────────── */
 btnSendToMe.addEventListener('click', async () => {
@@ -88,8 +98,8 @@ btnCapture.addEventListener('click', async () => {
     setLoading(true);
     clearStatus();
 
-    const format = fmtPdf.checked ? 'pdf' : 'screenshot';
-    const method = methodGmail.checked ? 'gmail' : methodOutlook.checked ? 'outlook' : 'mailto';
+    const format = formatSelect.value;
+    const method = methodSelect.value;
     const recipients = recipientsInput.value
       .split(/[,;\s]+/)
       .map((s) => s.trim())
@@ -122,11 +132,67 @@ async function handleScreenshotCapture(tab, method, recipients, subject, notes) 
   // Capture visible tab as PNG data URL
   const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
 
-  // Download the PNG file
-  const filename = generateFilename(tab.title || 'page', 'screenshot');
-  const downloadId = await new Promise((resolve, reject) => {
+  // Copy the screenshot to the clipboard so the user can paste it into the email
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  await navigator.clipboard.write([
+    new ClipboardItem({ [blob.type]: blob }),
+  ]);
+
+  // Optionally save the screenshot to disk
+  let filename;
+  if (saveScreenshotCheckbox.checked) {
+    filename = generateFilename(tab.title || 'page', 'screenshot');
+    await new Promise((resolve, reject) => {
+      chrome.downloads.download(
+        { url: dataUrl, filename, saveAs: false },
+        (id) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(id);
+          }
+        }
+      );
+    });
+  }
+
+  // Build body text
+  const body = buildEmailBody(tab, notes, filename);
+
+  // Open compose window
+  openCompose(method, recipients, subject, body);
+
+  const statusMsg = saveScreenshotCheckbox.checked
+    ? `✅ Screenshot copied to clipboard & saved as <strong>${filename}</strong>.<br>Paste it (<kbd>Ctrl+V</kbd>) in the compose window.`
+    : '✅ Screenshot copied to clipboard.<br>Paste it (<kbd>Ctrl+V</kbd>) in the compose window.';
+  showStatus(statusMsg, 'success');
+}
+
+/* ─── PDF capture ────────────────────────────────────────────────── */
+async function handlePdfCapture(tab, method, recipients, subject, notes) {
+  // 1. Inject html2pdf library into the active tab
+  await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    files: ['lib/html2pdf.bundle.min.js'],
+  });
+
+  // 2. Run content.js to generate the PDF and get back the data URL
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    files: ['src/content.js'],
+  });
+
+  const pdfDataUrl = results?.[0]?.result;
+  if (!pdfDataUrl) {
+    throw new Error('PDF generation returned no data. The page may block content scripts.');
+  }
+
+  // 3. Download the PDF
+  const filename = generateFilename(tab.title || 'page', 'pdf');
+  await new Promise((resolve, reject) => {
     chrome.downloads.download(
-      { url: dataUrl, filename, saveAs: false },
+      { url: pdfDataUrl, filename, saveAs: false },
       (id) => {
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
@@ -137,34 +203,13 @@ async function handleScreenshotCapture(tab, method, recipients, subject, notes) 
     );
   });
 
-  // Build body text
+  // 4. Build body text and open compose window
   const body = buildEmailBody(tab, notes, filename);
-
-  // Open compose window
   openCompose(method, recipients, subject, body);
 
   showStatus(
-    `✅ Screenshot saved as <strong>${filename}</strong>.<br>Compose window opened — attach the downloaded file to send it.`,
+    `✅ PDF saved as <strong>${filename}</strong>.<br>Compose window opened — attach the downloaded PDF to send it.`,
     'success'
-  );
-}
-
-/* ─── PDF capture ────────────────────────────────────────────────── */
-async function handlePdfCapture(tab, method, recipients, subject, notes) {
-  // Trigger the system print dialog via a content script message so the user
-  // can choose "Save as PDF" in their OS print dialog.
-  await chrome.tabs.sendMessage(tab.id, { type: 'PAGE2EMAIL_PRINT' });
-
-  // Build body text
-  const filename = generateFilename(tab.title || 'page', 'pdf');
-  const body = buildEmailBody(tab, notes, filename);
-
-  // Open compose window after a brief delay to let the print dialog settle
-  setTimeout(() => openCompose(method, recipients, subject, body), 600);
-
-  showStatus(
-    '📄 Print dialog opened — choose <strong>Save as PDF</strong>, then attach the saved file to your email.',
-    'info'
   );
 }
 
@@ -177,7 +222,7 @@ function buildEmailBody(tab, notes, filename) {
     '',
     notes ? `Notes:\n${notes}` : '',
     '',
-    `Attachment: ${filename}`,
+    filename ? `Attachment: ${filename}` : '',
     '',
     '—',
     'Sent with Page2Email Chrome Extension',
