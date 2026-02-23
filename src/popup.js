@@ -23,8 +23,39 @@ const btnSaveMe = document.getElementById('btn-save-me');
 const saveMeStatus = document.getElementById('save-me-status');
 const statusEl = document.getElementById('status');
 
+/* ─── Select2: icon template for selects with data-icon ─────────── */
+function formatIconOption(option) {
+  if (!option.element) return option.text;
+  const iconUrl = option.element.getAttribute('data-icon');
+  if (!iconUrl) return option.text;
+  const $option = $('<span class="select2-method-option"><img src="' + iconUrl + '" class="select2-method-icon" /> ' + option.text + '</span>');
+  return $option;
+}
+
 /* ─── Initialise popup ───────────────────────────────────────────── */
 async function init() {
+  // Shared Select2 config for icon dropdowns
+  const iconSelect2Config = {
+    templateResult: formatIconOption,
+    templateSelection: formatIconOption,
+    minimumResultsForSearch: Infinity,
+    dropdownAutoWidth: true,
+    width: '100%',
+  };
+
+  // Initialise Select2 on the format dropdown with custom icons
+  $('#format-select').select2(iconSelect2Config);
+
+  // Initialise Select2 on the method dropdown with custom icons
+  $('#method-select').select2(iconSelect2Config);
+
+  // Forward Select2 change events so existing listeners still work
+  $('#format-select').on('select2:select', function () {
+    formatSelect.dispatchEvent(new Event('change'));
+  });
+  $('#method-select').on('select2:select', function () {
+    methodSelect.dispatchEvent(new Event('change'));
+  });
   // Restore saved "my email" and pre-fill subject from active tab
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const stored = await chrome.storage.sync.get(['myEmail', 'lastRecipients']);

@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Page2Email</title>
   <link rel="stylesheet" href="popup.css" />
+  <link rel="stylesheet" href="../lib/select2.min.css" />
 </head>
 <body>
   <div class="container">
     <header class="header">
-      <img src="../icons/icon48.png" alt="Page2Email" class="logo" />
+      <img src="../icons/email.png" alt="Page2Email" class="logo" />
       <h1 class="title">Page2Email</h1>
     </header>
 
@@ -17,8 +18,8 @@
     <section class="section" aria-labelledby="format-label">
       <label class="field-label" id="format-label" for="format-select">Capture format <span class="help-icon" data-tooltip="Choose Screenshot to capture the visible area as a PNG image, or PDF to generate a full-page PDF document.">?</span></label>
       <select id="format-select" class="input select-method">
-        <option value="screenshot" selected>🖼️  Screenshot (PNG)</option>
-        <option value="pdf">📄  PDF (full page)</option>
+        <option value="screenshot" data-icon="../icons/screenshot.png" selected>Screenshot (PNG)</option>
+        <option value="pdf" data-icon="../icons/pdf.png">PDF (full page)</option>
       </select>
       <label class="checkbox-option" id="save-screenshot-option">
         <input type="checkbox" id="save-screenshot" />
@@ -30,9 +31,9 @@
     <section class="section" aria-labelledby="method-label">
       <label class="field-label" id="method-label" for="method-select">Send via <span class="help-icon" data-tooltip="Select how to send. Default email app opens your system mail client. Gmail and Outlook open a compose tab in your browser.">?</span></label>
       <select id="method-select" class="input select-method">
-        <option value="mailto" selected>📧  Default email app</option>
-        <option value="gmail">✉️  Gmail</option>
-        <option value="outlook">📨  Outlook</option>
+        <option value="mailto" data-icon="../icons/emailapp.png" selected>Default email app</option>
+        <option value="gmail" data-icon="../icons/gmail.png">Gmail</option>
+        <option value="outlook" data-icon="../icons/outlook.png">Outlook</option>
       </select>
     </section>
 
@@ -96,6 +97,8 @@
     </div>
   </div>
 
+  <script src="../lib/jquery.min.js"></script>
+  <script src="../lib/select2.min.js"></script>
   <script src="utils.js"></script>
   <script src="popup.js"></script>
 </body>

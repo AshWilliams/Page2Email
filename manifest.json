@@ -19,7 +19,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["lib/html2pdf.bundle.min.js"],
+      "resources": ["lib/html2pdf.bundle.min.js", "lib/jquery.min.js", "lib/select2.min.js", "lib/select2.min.css", "icons/emailapp.png", "icons/gmail.png", "icons/outlook.png", "icons/screenshot.png", "icons/pdf.png"],
       "matches": ["<all_urls>"]
     }
   ],
